@@ -1,0 +1,7 @@
+{
+  "name": "festa-acs-30-anos",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongodb": "^6.3.0"
+  }
+}

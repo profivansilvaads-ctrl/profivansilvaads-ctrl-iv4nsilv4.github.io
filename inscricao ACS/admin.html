@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Administrativo</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+    .resumo { background-color: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .login { max-width: 300px; margin: 100px auto; text-align: center; }
+    input { padding: 8px; width: 100%; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <div id="login" class="login">
+    <h2>Login Administrativo</h2>
+    <input type="password" id="senha" placeholder="Digite a senha">
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <div id="admin" style="display:none;">
+    <h1>Painel Administrativo - Inscrições</h1>
+    <div class="resumo" id="resumo"></div>
+    <button onclick="exportarCSV()">📎 Exportar para CSV/Excel</button>
+    <button onclick="carregarDados()">🔄 Atualizar</button>
+    <div style="overflow-x: auto;">
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>#</th><th>Nome do ACS</th><th>Convidado</th><th>Data</th>
+          </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      const senha = document.getElementById('senha').value;
+      fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senha: senha })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.autenticado) {
+          document.getElementById('login').style.display = 'none';
+          document.getElementById('admin').style.display = 'block';
+          carregarDados();
+        } else {
+          alert('Senha incorreta!');
+        }
+      });
+    }
+
+    function carregarDados() {
+      fetch('/api/admin')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('lista');
+          tbody.innerHTML = '';
+          let totalACS = 0, totalConvidados = 0;
+
+          data.inscricoes.forEach((item, index) => {
+            totalACS++;
+            if (item.temConvidado && item.convidado) totalConvidados++;
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = index + 1;
+            row.insertCell(1).innerText = item.nomeACS;
+            row.insertCell(2).innerText = item.convidado || '—';
+            row.insertCell(3).innerText = new Date(item.dataInscricao).toLocaleString('pt-BR');
+          });
+
+          document.getElementById('resumo').innerHTML = `
+            <strong>📊 Resumo do Evento</strong><br>
+            ✅ Total de ACS inscritos: ${totalACS}<br>
+            👥 Total de convidados: ${totalConvidados}<br>
+            🎉 Total de participantes (ACS + convidados): ${totalACS + totalConvidados}
+          `;
+        });
+    }
+
+    function exportarCSV() {
+      window.location.href = '/api/exportar';
+    }
+
+    // Tenta carregar automaticamente (se já tiver logado)
+    // (não faz nada, só mostra tela de login)
+  </script>
+</body>
+</html>

@@ -20,8 +20,8 @@ export default async function handler(req, res) {
     const client = new MongoClient(uri);
     await client.connect();
 
-    const db = client.db('festa_acs'); // nome do banco
-    const colecao = db.collection('inscricoes');
+    const db = client.db('IEMA-Game'); // nome do banco
+    const colecao = db.collection('IEMA-Game');
 
     const inscricao = {
       nomeACS: nomeACS.trim(),

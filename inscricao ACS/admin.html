@@ -1,96 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel Administrativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin — Festa ACS</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 15px; }
+    h1 { color: #1565c0; }
+    .resumo { display: flex; gap: 20px; margin: 20px 0; }
+    .card { background: #e3f2fd; padding: 15px 25px; border-radius: 10px; text-align: center; }
+    .card h2 { margin: 5px 0; font-size: 2em; color: #1565c0; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    button { padding: 10px 20px; margin: 5px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
-    .resumo { background-color: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    .login { max-width: 300px; margin: 100px auto; text-align: center; }
-    input { padding: 8px; width: 100%; margin: 5px 0; }
+    th { background: #1565c0; color: white; padding: 10px; }
+    td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+    tr:hover { background: #f5f5f5; }
+    .btn { background: #1565c0; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+    .btn:hover { background: #0d47a1; }
+    #login { max-width: 300px; margin: 100px auto; text-align: center; }
+    #login input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+    #conteudo { display: none; }
   </style>
 </head>
 <body>
-  <div id="login" class="login">
-    <h2>Login Administrativo</h2>
-    <input type="password" id="senha" placeholder="Digite a senha">
-    <button onclick="login()">Entrar</button>
+
+<div id="login">
+  <h1>🔐 Admin</h1>
+  <input type="password" id="senha" placeholder="Senha do administrador">
+  <button class="btn" onclick="entrar()">Entrar</button>
+</div>
+
+<div id="conteudo">
+  <h1>📋 Painel de Inscrições — Festa ACS 30 Anos</h1>
+  
+  <div class="resumo">
+    <div class="card"><p>ACS Inscritos</p><h2 id="totalACS">-</h2></div>
+    <div class="card"><p>Convidados</p><h2 id="totalConvidados">-</h2></div>
+    <div class="card"><p>Total Participantes</p><h2 id="totalTotal">-</h2></div>
   </div>
 
-  <div id="admin" style="display:none;">
-    <h1>Painel Administrativo - Inscrições</h1>
-    <div class="resumo" id="resumo"></div>
-    <button onclick="exportarCSV()">📎 Exportar para CSV/Excel</button>
-    <button onclick="carregarDados()">🔄 Atualizar</button>
-    <div style="overflow-x: auto;">
-      <table id="tabela">
-        <thead>
-          <tr>
-            <th>#</th><th>Nome do ACS</th><th>Convidado</th><th>Data</th>
-          </tr>
-        </thead>
-        <tbody id="lista"></tbody>
-      </table>
-    </div>
-  </div>
+  <button class="btn" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+  <button class="btn" onclick="carregarDados()">🔄 Atualizar</button>
 
-  <script>
-    function login() {
-      const senha = document.getElementById('senha').value;
-      fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senha: senha })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.autenticado) {
-          document.getElementById('login').style.display = 'none';
-          document.getElementById('admin').style.display = 'block';
-          carregarDados();
-        } else {
-          alert('Senha incorreta!');
-        }
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nome do ACS</th>
+        <th>Nome do Convidado</th>
+        <th>Data/Hora</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
+</div>
+
+<script>
+  let senha = '';
+  let dados = [];
+
+  function entrar() {
+    senha = document.getElementById('senha').value;
+    carregarDados();
+  }
+
+  async function carregarDados() {
+    try {
+      const resp = await fetch('/api/admin', {
+        headers: { 'Authorization': `Bearer ${senha}` }
       });
+      
+      if (resp.status === 401) { alert('Senha incorreta!'); return; }
+      
+      const json = await resp.json();
+      dados = json.inscricoes;
+      
+      document.getElementById('totalACS').textContent = json.resumo.totalACS;
+      document.getElementById('totalConvidados').textContent = json.resumo.totalConvidados;
+      document.getElementById('totalTotal').textContent = json.resumo.totalParticipantes;
+      
+      const tabela = document.getElementById('tabela');
+      tabela.innerHTML = '';
+      dados.forEach((ins, i) => {
+        const data = new Date(ins.dataInscricao).toLocaleString('pt-BR');
+        tabela.innerHTML += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${ins.nomeACS}</td>
+            <td>${ins.nomeConvidado || '—'}</td>
+            <td>${data}</td>
+          </tr>`;
+      });
+      
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('conteudo').style.display = 'block';
+    } catch (e) {
+      alert('Erro ao carregar dados');
     }
+  }
 
-    function carregarDados() {
-      fetch('/api/admin')
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.getElementById('lista');
-          tbody.innerHTML = '';
-          let totalACS = 0, totalConvidados = 0;
+  function exportarCSV() {
+    let csv = 'Nome ACS,Nome Convidado,Data Inscrição\n';
+    dados.forEach(ins => {
+      const data = new Date(ins.dataInscricao).toLocaleString('pt-BR');
+      csv += `"${ins.nomeACS}","${ins.nomeConvidado || ''}","${data}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = 'inscricoes_festa_acs.csv'; a.click();
+  }
 
-          data.inscricoes.forEach((item, index) => {
-            totalACS++;
-            if (item.temConvidado && item.convidado) totalConvidados++;
-            const row = tbody.insertRow();
-            row.insertCell(0).innerText = index + 1;
-            row.insertCell(1).innerText = item.nomeACS;
-            row.insertCell(2).innerText = item.convidado || '—';
-            row.insertCell(3).innerText = new Date(item.dataInscricao).toLocaleString('pt-BR');
-          });
+  document.getElementById('senha').addEventListener('keypress', e => {
+    if (e.key === 'Enter') entrar();
+  });
+</script>
 
-          document.getElementById('resumo').innerHTML = `
-            <strong>📊 Resumo do Evento</strong><br>
-            ✅ Total de ACS inscritos: ${totalACS}<br>
-            👥 Total de convidados: ${totalConvidados}<br>
-            🎉 Total de participantes (ACS + convidados): ${totalACS + totalConvidados}
-          `;
-        });
-    }
-
-    function exportarCSV() {
-      window.location.href = '/api/exportar';
-    }
-
-    // Tenta carregar automaticamente (se já tiver logado)
-    // (não faz nada, só mostra tela de login)
-  </script>
 </body>
 </html>

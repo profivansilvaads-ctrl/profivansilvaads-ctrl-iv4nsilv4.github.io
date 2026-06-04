@@ -527,6 +527,20 @@ footer{flex-shrink:0;text-align:center;
     document.getElementById('agreeErr').classList.remove('show');
   }
 
+  function storeData() {
+    const acsName = document.getElementById('acsName').value.trim();
+    const hasGuest = document.getElementById('guestExtra').classList.contains('open');
+    const guestName = hasGuest ? document.getElementById('guestName').value.trim() : '';
+    const inscriptionData = {
+        acsName: acsName,
+        hasGuest: hasGuest,
+        guestName: guestName,
+        date: new Date().toISOString()
+    };
+    localStorage.setItem('acsInscription', JSON.stringify(inscriptionData));
+    console.log('Dados salvos:', inscriptionData);
+}
+
   // Submit
   async function submitForm() {
   const acsName = document.getElementById('acsName').value.trim();

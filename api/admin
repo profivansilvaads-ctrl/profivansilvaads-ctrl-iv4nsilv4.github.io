@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     const client = new MongoClient(uri);
     await client.connect();
 
-    const db = client.db('festa_acs');
-    const colecao = db.collection('inscricoes');
+    const db = client.db('IEMA-Game');
+    const colecao = db.collection('IEMA-Game');
 
     const inscricoes = await colecao.find({}).sort({ dataInscricao: -1 }).toArray();
     

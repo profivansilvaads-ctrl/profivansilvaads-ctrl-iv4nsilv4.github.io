@@ -1,0 +1,44 @@
+// api/admin.js
+import { MongoClient } from 'mongodb';
+
+const uri = process.env.MONGODB_URI;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // senha que você vai definir
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Verificar senha
+  const auth = req.headers.authorization;
+  if (auth !== `Bearer ${ADMIN_PASSWORD}`) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    const client = new MongoClient(uri);
+    await client.connect();
+
+    const db = client.db('festa_acs');
+    const colecao = db.collection('inscricoes');
+
+    const inscricoes = await colecao.find({}).sort({ dataInscricao: -1 }).toArray();
+    
+    const totalACS = inscricoes.length;
+    const totalConvidados = inscricoes.filter(i => i.temConvidado).length;
+    const totalParticipantes = totalACS + totalConvidados;
+
+    await client.close();
+
+    res.status(200).json({
+      inscricoes,
+      resumo: { totalACS, totalConvidados, totalParticipantes }
+    });
+
+  } catch (error) {
+    console.error('Erro:', error);
+    res.status(500).json({ erro: 'Erro ao buscar dados' });
+  }
+}

@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // ── DEFINA AQUI APENAS A SUA SENHA DE ACESSO ──
-const ACESSO_SENHA = 'Festa30AnosSenha'; 
+const ACESSO_SENHA = 'acsslp'; 
 
 const uri = process.env.MONGODB_URI;
 let cachedClient = null;

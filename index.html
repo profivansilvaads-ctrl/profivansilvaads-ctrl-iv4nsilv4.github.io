@@ -528,22 +528,63 @@ footer{flex-shrink:0;text-align:center;
   }
 
   // Submit
-  function submitForm(){
-    if(!document.getElementById('agreeChk').checked){
-      document.getElementById('agreeErr').classList.add('show');
-      return;
-    }
-    const name=document.getElementById('acsName').value.trim();
-    document.getElementById('sName').textContent=name.split(' ')[0];
-    const gName=guestOpen?document.getElementById('guestName').value.trim():'';
-    if(gName){
-      document.getElementById('sGuestRow').style.display='flex';
-      document.getElementById('sGuestName').textContent=gName;
-    }else{
-      document.getElementById('sGuestRow').style.display='none';
-    }
-    goTo(8);
+  async function submitForm() {
+  const acsName = document.getElementById('acsName').value.trim();
+  const temConvidado = document.getElementById('guestExtra').classList.contains('open');
+  const guestName = temConvidado ? document.getElementById('guestName').value.trim() : '';
+
+  if (!acsName) {
+    document.getElementById('acsErr').classList.add('show');
+    return;
   }
+
+  const payload = {
+    nomeACS: acsName,
+    convidado: guestName,
+    temConvidado: temConvidado
+  };
+
+  try {
+    const response = await fetch('/api/cadastro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (data.sucesso) {
+      // Mostra tela de sucesso
+      document.getElementById('sName').innerText = acsName;
+      if (temConvidado && guestName) {
+        document.getElementById('sGuestRow').style.display = 'flex';
+        document.getElementById('sGuestName').innerText = guestName;
+      } else {
+        document.getElementById('sGuestRow').style.display = 'none';
+      }
+
+      document.getElementById('s0').classList.remove('active');
+      document.getElementById('s1').classList.remove('active');
+      document.getElementById('s2').classList.remove('active');
+      document.getElementById('s3').classList.remove('active');
+      document.getElementById('s4').classList.remove('active');
+      document.getElementById('s5').classList.remove('active');
+      document.getElementById('s6').classList.remove('active');
+      document.getElementById('s7').classList.remove('active');
+      document.getElementById('s8').classList.add('active');
+
+      // Limpa o formulário
+      document.getElementById('acsName').value = '';
+      document.getElementById('guestName').value = '';
+      document.getElementById('agreeChk').checked = false;
+    } else {
+      alert('Erro: ' + data.erro);
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    alert('Erro ao enviar inscrição. Tente novamente.');
+  }
+}
 
   // Restart
   function restart(){

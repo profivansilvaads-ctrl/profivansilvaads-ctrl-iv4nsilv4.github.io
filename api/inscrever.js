@@ -30,28 +30,32 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { acsName, guestName } = req.body;
+    const { acsName, phone } = req.body;
 
-    if (!acsName) {
-      return res.status(400).json({ success: false, error: 'Nome principal é obrigatório.' });
+    if (!acsName || acsName.trim().length < 3) {
+      return res.status(400).json({ success: false, error: 'O nome completo do ACS é obrigatório.' });
+    }
+
+    if (!phone || phone.trim().length < 8) {
+      return res.status(400).json({ success: false, error: 'O telefone para contato é obrigatório.' });
     }
 
     const client = await connectToDatabase();
-    // Nome do seu banco de dados: "festa_acs" e da coleção: "inscritos"
+    // Banco de dados e coleção de inscritos
     const db = client.db('festa_acs');
     const collection = db.collection('inscritos');
 
     const novoInscrito = {
-      acsName,
-      guestName: guestName || null,
+      acsName: acsName.trim(),
+      phone: phone.trim(),
       dataInscricao: new Date()
     };
 
     await collection.insertOne(novoInscrito);
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, message: 'Inscrição realizada com sucesso!' });
   } catch (error) {
     console.error("Erro no servidor:", error);
-    return res.status(500).json({ success: false, error: 'Erro interno ao salvar no banco de dados.' });
+    return res.status(500).json({ success: false, error: 'Erro interno ao salvar no banco de dados: ' + error.message });
   }
 };

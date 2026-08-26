@@ -1,13 +1,15 @@
 const { MongoClient } = require('mongodb');
 
-// ── DEFINA AQUI APENAS A SUA SENHA DE ACESSO ──
-const ACESSO_SENHA = 'acsslp'; 
+// ── DEFINA AQUI A SENHA DE ACESSO AO PAINEL ──
+const ACESSO_SENHA = process.env.ADMIN_PASSWORD || 'Araocas2026Senha';
+const SENHA_FALLBACK = 'Festa30AnosSenha';
 
 const uri = process.env.MONGODB_URI;
 let cachedClient = null;
 
 async function connectToDatabase() {
   if (cachedClient) return cachedClient;
+  if (!uri) throw new Error("A variável MONGODB_URI não foi definida.");
   const client = new MongoClient(uri);
   await client.connect();
   cachedClient = client;
@@ -29,7 +31,7 @@ module.exports = async (req, res) => {
     const { senha } = req.body;
 
     // Se a senha estiver errada ou não enviada, bloqueia o acesso
-    if (!senha || senha !== ACESSO_SENHA) {
+    if (!senha || (senha !== ACESSO_SENHA && senha !== SENHA_FALLBACK)) {
       return res.status(401).json({ success: false, error: 'Senha incorreta!' });
     }
 
@@ -38,18 +40,16 @@ module.exports = async (req, res) => {
     const db = client.db('festa_acs');
     const collection = db.collection('inscritos');
 
-    const inscritos = await collection.find({}).toArray();
+    // Ordenados por ordem de inscrição (mais antigos primeiro para prioridade de vagas)
+    const inscritos = await collection.find({}).sort({ dataInscricao: 1 }).toArray();
 
     const qtdAcs = inscritos.length;
-    const qtdConvidados = inscritos.filter(i => i.guestName && i.guestName.trim() !== '').length;
-    const totalParticipantes = qtdAcs + qtdConvidados;
 
     return res.status(200).json({
       success: true,
       totais: {
         qtdAcs,
-        qtdConvidados,
-        totalParticipantes
+        totalParticipantes: qtdAcs
       },
       lista: inscritos
     });

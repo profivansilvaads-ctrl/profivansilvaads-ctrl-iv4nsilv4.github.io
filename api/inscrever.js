@@ -48,7 +48,9 @@ module.exports = async (req, res) => {
     const novoInscrito = {
       acsName: acsName.trim(),
       phone: phone.trim(),
-      dataInscricao: new Date()
+      dataInscricao: new Date(),
+      statusPagamento: 'pendente',
+      pago: false
     };
 
     await collection.insertOne(novoInscrito);
